@@ -1,10 +1,5 @@
 use std::collections::HashSet;
 
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>())
-}
-
-
 // use indexmap::map::Entry;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
