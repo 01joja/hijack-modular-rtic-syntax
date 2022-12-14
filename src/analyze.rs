@@ -295,6 +295,7 @@ pub type Resource = Ident;
 pub type Task = Ident;
 
 /// The result of analyzing an RTIC application
+#[derive(Debug)]
 pub struct Analysis {
     /// SPSC message channels
     pub channels: Channels,

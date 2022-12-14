@@ -1,5 +1,10 @@
 use std::collections::HashSet;
 
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
+
+
 // use indexmap::map::Entry;
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
@@ -25,6 +30,7 @@ impl AppArgs {
             let mut device = None;
             let mut peripherals = true;
             let mut extern_interrupts = ExternInterrupts::new();
+            let mut passes = vec![];
 
             loop {
                 if input.is_empty() {
@@ -112,6 +118,34 @@ impl AppArgs {
                             ));
                         }
                     }
+                    "modular_chain" => {
+                        if let Ok(p) = input.parse::<ExprArray>() {
+                            for expression in p.elems {
+                                match expression {
+                                    Expr::Lit(expression) => {
+                                        let str = &expression.lit;
+                                        match str{
+                                            syn::Lit::Str(literal) => {
+                                                passes.push(literal.value());
+                                            }
+                                            _ =>{
+                                                return Err(parse::Error::new(
+                                                    expression.span(),
+                                                    "Needs to be a string",
+                                                ));
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(parse::Error::new(
+                                            expression.span(),
+                                            "Needs to be a string",
+                                        ));
+                                    }
+                                }
+                            }
+                        }
+                    }
                     _ => {
                         return Err(parse::Error::new(ident.span(), "unexpected argument"));
                     }
@@ -129,6 +163,7 @@ impl AppArgs {
                 device,
                 peripherals,
                 extern_interrupts,
+                passes
             })
         })
         .parse2(tokens)

@@ -53,6 +53,14 @@ pub struct ExternInterrupt {
     pub attrs: Vec<Attribute>,
 }
 
+// /// Interrupt that could be used to dispatch software tasks
+// #[derive(Debug, Clone)]
+// #[non_exhaustive]
+// pub struct ExternInterrupt {
+//     /// Attributes that will apply to this interrupt handler
+//     pub attrs: Vec<Attribute>,
+// }
+
 /// The arguments of the `#[app]` attribute
 #[derive(Debug)]
 pub struct AppArgs {
@@ -64,6 +72,9 @@ pub struct AppArgs {
 
     /// Interrupts used to dispatch software tasks
     pub extern_interrupts: ExternInterrupts,
+    
+    /// The order passes are processed
+    pub passes: Vec<String>,
 }
 
 /// The `init`-ialization function
