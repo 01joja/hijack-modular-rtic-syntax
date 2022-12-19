@@ -113,7 +113,7 @@ impl AppArgs {
                             ));
                         }
                     }
-                    "modular_chain" => {
+                    "passes" => {
                         if let Ok(p) = input.parse::<ExprArray>() {
                             for expression in p.elems {
                                 match expression {
