@@ -113,7 +113,7 @@ impl AppArgs {
                             ));
                         }
                     }
-                    "passes" => {
+                    "compiler_passes" => {
                         if let Ok(p) = input.parse::<ExprArray>() {
                             for expression in p.elems {
                                 match expression {
