@@ -367,7 +367,7 @@ pub enum TaskLocal {
 }
 
 /// Resource access
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Access {
     /// `[x]`, a mutable resource
     Exclusive,

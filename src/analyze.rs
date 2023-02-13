@@ -351,7 +351,7 @@ pub struct Channel {
 }
 
 /// Resource ownership
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Ownership {
     /// Owned by a single task
     Owned {
