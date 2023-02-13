@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, process::id};
 
 // use indexmap::map::Entry;
 use proc_macro2::TokenStream as TokenStream2;
@@ -12,7 +12,7 @@ use super::Input;
 use crate::{
     ast::{
         App, AppArgs, ExternInterrupt, ExternInterrupts, HardwareTask, Idle, IdleArgs, Init,
-        InitArgs, LocalResource, Monotonic, MonotonicArgs, SharedResource, SoftwareTask,
+        InitArgs, LocalResource, Monotonic, MonotonicArgs, SharedResource, SoftwareTask, TaskModule,
     },
     parse::util,
     Either, Map, Set, Settings,
@@ -117,24 +117,33 @@ impl AppArgs {
                         if let Ok(p) = input.parse::<ExprArray>() {
                             for expression in p.elems {
                                 match expression {
-                                    Expr::Lit(expression) => {
-                                        let str = &expression.lit;
-                                        match str{
-                                            syn::Lit::Str(literal) => {
-                                                passes.push(literal.value());
-                                            }
-                                            _ =>{
-                                                return Err(parse::Error::new(
-                                                    expression.span(),
-                                                    "Needs to be a string",
-                                                ));
-                                            }
+                                    Expr::Path(expr) =>{
+                                        let path = expr.path;
+                                        let ident = if path.leading_colon.is_some()
+                                            || path.segments.len() != 1
+                                        {
+                                            return Err(parse::Error::new(
+                                                path.span(),
+                                                "interrupt must be an identifier, not a path",
+                                            ));
+                                        } else {
+                                            path.segments[0].ident.clone()
+                                        };
+                                        let span = ident.span();
+                                        if passes.contains(&ident) {
+                                            return Err(parse::Error::new(
+                                                span,
+                                                "this extern interrupt is listed more than once",
+                                            ));
+                                        } else {
+                                            passes
+                                                .push(ident);
                                         }
                                     }
                                     _ => {
                                         return Err(parse::Error::new(
                                             expression.span(),
-                                            "Needs to be a string",
+                                            "Pass must be an identifier",
                                         ));
                                     }
                                 }
@@ -142,7 +151,10 @@ impl AppArgs {
                         }
                     }
                     _ => {
-                        return Err(parse::Error::new(ident.span(), "unexpected argument"));
+                        return Err(parse::Error::new(
+                            ident.span(),
+                            "unexpected argument value; expected an array in compiler_passes",
+                        ));
                     }
                 }
 
@@ -179,6 +191,7 @@ impl App {
         let mut software_tasks = Map::new();
         let mut user_imports = vec![];
         let mut user_code = vec![];
+        let mut task_modules = Map::new();
 
         let mut seen_idents = HashSet::<Ident>::new();
         let mut bindings = HashSet::<Ident>::new();
@@ -512,6 +525,27 @@ impl App {
 
                     // All types are passed on
                     user_code.push(item.clone());
+                }  
+                Item::Mod(mut module) =>{
+                    if let Some(pos) = module
+                        .attrs
+                        .iter()
+                        .position(|attr| util::attr_eq(attr, "__rtic_pass_task_module")){
+
+                            let name = module.ident.clone();
+
+                            if task_modules.contains_key(&name){
+                                return Err(parse::Error::new(
+                                    name.span(),
+                                    "this internal module is defined multiple times, passes error",
+                                ));
+                            }
+                            
+                            task_modules.insert(
+                                name,
+                                TaskModule::parse(module)?,
+                            );
+                    }
                 }
                 _ => {
                     // Anything else within the module should not make any difference
@@ -558,6 +592,7 @@ impl App {
             user_code,
             hardware_tasks,
             software_tasks,
+            task_modules,
         })
     }
 }

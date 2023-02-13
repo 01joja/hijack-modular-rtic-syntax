@@ -6,6 +6,7 @@ mod monotonic;
 mod resource;
 mod software_task;
 mod util;
+mod task_module;
 
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{

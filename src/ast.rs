@@ -40,6 +40,9 @@ pub struct App {
 
     /// Software tasks: `#[task]`
     pub software_tasks: Map<SoftwareTask>,
+
+    /// Used by passes to access task modules
+    pub task_modules: Map<TaskModule>,
 }
 
 /// Interrupts used to dispatch software tasks
@@ -74,7 +77,7 @@ pub struct AppArgs {
     pub extern_interrupts: ExternInterrupts,
     
     /// The order passes are processed
-    pub passes: Vec<String>,
+    pub passes: Vec<Ident>,
 }
 
 /// The `init`-ialization function
@@ -343,6 +346,14 @@ pub struct Local {
 
     /// Initial value
     pub expr: Box<Expr>,
+}
+
+/// Gives access to task modules during passes
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct TaskModule{
+    /// Module code
+    pub items: Vec<Item>,
 }
 
 /// A wrapper of the 2 kinds of locals that tasks can have
