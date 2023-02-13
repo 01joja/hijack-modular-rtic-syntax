@@ -130,14 +130,14 @@ impl AppArgs {
                                             path.segments[0].ident.clone()
                                         };
                                         let span = ident.span();
-                                        if passes.contains(&ident) {
+                                        if passes.contains(&ident.to_string()) {
                                             return Err(parse::Error::new(
                                                 span,
                                                 "this extern interrupt is listed more than once",
                                             ));
                                         } else {
                                             passes
-                                                .push(ident);
+                                                .push(ident.to_string());
                                         }
                                     }
                                     _ => {

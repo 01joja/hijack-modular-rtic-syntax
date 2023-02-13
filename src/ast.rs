@@ -77,7 +77,7 @@ pub struct AppArgs {
     pub extern_interrupts: ExternInterrupts,
     
     /// The order passes are processed
-    pub passes: Vec<Ident>,
+    pub passes: Vec<String>,
 }
 
 /// The `init`-ialization function
