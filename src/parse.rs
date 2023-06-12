@@ -6,7 +6,8 @@ mod monotonic;
 mod resource;
 mod software_task;
 mod util;
-mod task_module;
+mod pass_module;
+mod main_function;
 
 use proc_macro2::TokenStream as TokenStream2;
 use syn::{
@@ -448,7 +449,7 @@ fn monotonic_args(path: Path, tokens: TokenStream2) -> parse::Result<MonotonicAr
                     }
 
                     _ => {
-                        return Err(parse::Error::new(ident.span(), "unexpected argument"));
+                        
                     }
                 }
                 if content.is_empty() {
@@ -477,4 +478,74 @@ fn monotonic_args(path: Path, tokens: TokenStream2) -> parse::Result<MonotonicAr
         })
     })
     .parse2(tokens)
+}
+
+fn pass_module_args(tokens: TokenStream2) -> parse::Result<(bool,bool)>{
+    (|input: ParseStream<'_>| -> parse::Result<(bool,bool)> {
+    let mut has_context_option = None;
+    let mut has_monotonic_option = None;
+
+    if input.is_empty() {
+        return Ok((false,false));
+    }
+    
+    
+    let content;
+    parenthesized!(content in input);
+    loop {
+        if content.is_empty() {
+            break;
+        }
+        // Parse identifier name
+        let ident: Ident = content.parse()?;
+        // Handle equal sign
+        let _: Token![=] = content.parse()?;
+
+        let ident_s = ident.to_string();
+        match &*ident_s{
+            "has_context" => {
+
+                let lit_bool: LitBool = content.parse()?;
+                
+                if has_context_option.is_some(){
+                    return Err(parse::Error::new(ident.span(), "has_context is defined twice"))
+                }
+
+                has_context_option = Some(lit_bool.value());
+            }
+            "has_monotonic" => {
+
+                let lit_bool: LitBool = content.parse()?;
+                
+                if has_monotonic_option.is_some(){
+                    return Err(parse::Error::new(ident.span(), "has_monotonics is defined twice"))
+                }
+                has_monotonic_option = Some(lit_bool.value());
+            }
+            _ => return Err(parse::Error::new(ident.span(), "unexpected argument in pass_module")),
+        }
+ 
+        if content.is_empty() {
+            break;
+        }
+
+        // Handle comma: ,
+        let _: Token![,] = content.parse()?;
+    }
+
+    let mut has_context = false;
+    let mut has_monotonic = false;
+
+    if let Some(b) = has_context_option{
+        has_context = b;
+    }
+    
+    if let Some(b) = has_monotonic_option{
+        has_monotonic = b;
+    }
+    
+
+    Ok((has_context,has_monotonic))
+
+    }).parse2(tokens)
 }

@@ -1,19 +1,18 @@
-use proc_macro2::TokenStream as TokenStream2;
+
 use syn::{parse, ItemMod};
 
 use crate::{
-    ast::{TaskModule},
-    parse::util,
+    ast::{PassModule}
 };
 
-impl TaskModule {
-    pub(crate) fn parse(module: ItemMod) -> parse::Result<Self> {
+impl PassModule {
+    pub(crate) fn parse(module: &ItemMod, has_context: bool, has_monotonic: bool) -> parse::Result<Self> {
         
-        let name = module.ident;
-                            
+
+        let name = module.ident.clone();             
 
         let mut items = vec![];
-        if let Some(i) = module.content{
+        if let Some(i) = module.content.clone(){
             items = i.1;
         }
 
@@ -29,9 +28,10 @@ impl TaskModule {
                 ));
             },
         }
-
         
-        return Ok(TaskModule {
+        return Ok(PassModule {
+            has_context,
+            has_monotonic,
             items,
         });
 

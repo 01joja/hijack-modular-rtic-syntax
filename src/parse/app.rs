@@ -1,4 +1,4 @@
-use std::{collections::HashSet, process::id};
+use std::{collections::HashSet};
 
 // use indexmap::map::Entry;
 use proc_macro2::TokenStream as TokenStream2;
@@ -12,7 +12,8 @@ use super::Input;
 use crate::{
     ast::{
         App, AppArgs, ExternInterrupt, ExternInterrupts, HardwareTask, Idle, IdleArgs, Init,
-        InitArgs, LocalResource, Monotonic, MonotonicArgs, SharedResource, SoftwareTask, TaskModule,
+        InitArgs, LocalResource, Monotonic, MonotonicArgs, SharedResource, SoftwareTask, 
+        PassModule, MainFunction,
     },
     parse::util,
     Either, Map, Set, Settings,
@@ -191,7 +192,10 @@ impl App {
         let mut software_tasks = Map::new();
         let mut user_imports = vec![];
         let mut user_code = vec![];
-        let mut task_modules = Map::new();
+
+        // Modular rtic
+        let mut pass_modules = Map::new();
+        let mut main_fn = None;
 
         let mut seen_idents = HashSet::<Ident>::new();
         let mut bindings = HashSet::<Ident>::new();
@@ -310,6 +314,21 @@ impl App {
                                 );
                             }
                         }
+                    } else if let Some(_) = item
+                    .attrs
+                    .iter()
+                    .position(|attr| util::attr_eq(attr, "__rtic_main")){
+                        
+                        
+
+                        if main_fn.is_some(){
+                            return Err(parse::Error::new(
+                                item.span(),
+                                "main internal module is defined multiple times, passes error",
+                            ));
+                        }
+
+                        main_fn = Some(MainFunction::parse(item.block.stmts)?);
                     } else {
                         // Forward normal functions
                         user_code.push(Item::Fn(item.clone()));
@@ -526,25 +545,35 @@ impl App {
                     // All types are passed on
                     user_code.push(item.clone());
                 }  
-                Item::Mod(mut module) =>{
+                Item::Mod(ref mut module) =>{
                     if let Some(pos) = module
                         .attrs
                         .iter()
-                        .position(|attr| util::attr_eq(attr, "__rtic_pass_task_module")){
+                        .position(|attr| util::attr_eq(attr, "__rtic_pass_module")){
 
+                            
+                            
+                            
                             let name = module.ident.clone();
 
-                            if task_modules.contains_key(&name){
+                            if pass_modules.contains_key(&name){
                                 return Err(parse::Error::new(
                                     name.span(),
                                     "this internal module is defined multiple times, passes error",
                                 ));
                             }
+
+                            let (has_context, has_monotonic) = crate::parse::pass_module_args(
+                                module.attrs.remove(pos).tokens,
+                            )?;
                             
-                            task_modules.insert(
+                            pass_modules.insert(
                                 name,
-                                TaskModule::parse(module)?,
+                                PassModule::parse(module,has_context,has_monotonic)?,
                             );
+                    } else {
+                        // Modules without #[__rtic_pass_module] or #[__rtic_main_module] attribute should just be passed along
+                        user_code.push(item.clone());
                     }
                 }
                 _ => {
@@ -580,6 +609,7 @@ impl App {
             ));
         }
 
+        
         Ok(App {
             args,
             name: input.ident,
@@ -592,7 +622,8 @@ impl App {
             user_code,
             hardware_tasks,
             software_tasks,
-            task_modules,
+            pass_modules,
+            main_fn,
         })
     }
 }

@@ -42,7 +42,10 @@ pub struct App {
     pub software_tasks: Map<SoftwareTask>,
 
     /// Used by passes to access task modules
-    pub task_modules: Map<TaskModule>,
+    pub pass_modules: Map<PassModule>,
+
+    /// Used by passes to pass initialize code to main function (rtic_ext)
+    pub main_fn: Option<MainFunction>,
 }
 
 /// Interrupts used to dispatch software tasks
@@ -351,9 +354,26 @@ pub struct Local {
 /// Gives access to task modules during passes
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct TaskModule{
+pub struct PassModule{
+    /// If module has context
+    pub has_context: bool,
+    /// If module has context
+    pub has_monotonic: bool,
     /// Module code
     pub items: Vec<Item>,
+}
+
+/// Holds code meant for main in mod rtic_ext,
+/// only meant for use during passes
+#[derive(Debug)]
+#[non_exhaustive]
+pub struct MainFunction{
+    /// Code run in main function before the
+    /// call to init
+    pub pre_init: Vec<Stmt>,
+    /// code run in main function after the
+    /// call to init
+    pub post_init: Vec<Stmt>,
 }
 
 /// A wrapper of the 2 kinds of locals that tasks can have
