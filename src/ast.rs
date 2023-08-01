@@ -42,7 +42,7 @@ pub struct App {
     pub software_tasks: Map<SoftwareTask>,
 
     /// Used by passes to access task modules
-    pub pass_modules: Map<PassModule>,
+    pub task_modules: Map<taskModule>,
 
     /// Used by passes to pass initialize code to main function (rtic_ext)
     pub main_fn: Option<MainFunction>,
@@ -354,7 +354,7 @@ pub struct Local {
 /// Gives access to task modules during passes
 #[derive(Debug)]
 #[non_exhaustive]
-pub struct PassModule{
+pub struct taskModule{
     /// If module has context
     pub has_context: bool,
     /// If module has context

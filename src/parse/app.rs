@@ -13,7 +13,7 @@ use crate::{
     ast::{
         App, AppArgs, ExternInterrupt, ExternInterrupts, HardwareTask, Idle, IdleArgs, Init,
         InitArgs, LocalResource, Monotonic, MonotonicArgs, SharedResource, SoftwareTask, 
-        PassModule, MainFunction,
+        taskModule, MainFunction,
     },
     parse::util,
     Either, Map, Set, Settings,
@@ -194,7 +194,7 @@ impl App {
         let mut user_code = vec![];
 
         // Modular rtic
-        let mut pass_modules = Map::new();
+        let mut task_modules = Map::new();
         let mut main_fn = None;
 
         let mut seen_idents = HashSet::<Ident>::new();
@@ -549,30 +549,30 @@ impl App {
                     if let Some(pos) = module
                         .attrs
                         .iter()
-                        .position(|attr| util::attr_eq(attr, "__rtic_pass_module")){
+                        .position(|attr| util::attr_eq(attr, "__rtic_task_module")){
 
                             
                             
                             
                             let name = module.ident.clone();
 
-                            if pass_modules.contains_key(&name){
+                            if task_modules.contains_key(&name){
                                 return Err(parse::Error::new(
                                     name.span(),
                                     "this internal module is defined multiple times, passes error",
                                 ));
                             }
 
-                            let (has_context, has_monotonic) = crate::parse::pass_module_args(
+                            let (has_context, has_monotonic) = crate::parse::task_module_args(
                                 module.attrs.remove(pos).tokens,
                             )?;
                             
-                            pass_modules.insert(
+                            task_modules.insert(
                                 name,
-                                PassModule::parse(module,has_context,has_monotonic)?,
+                                taskModule::parse(module,has_context,has_monotonic)?,
                             );
                     } else {
-                        // Modules without #[__rtic_pass_module] or #[__rtic_main_module] attribute should just be passed along
+                        // Modules without #[__rtic_task_module] or #[__rtic_main_module] attribute should just be passed along
                         user_code.push(item.clone());
                     }
                 }
@@ -622,7 +622,7 @@ impl App {
             user_code,
             hardware_tasks,
             software_tasks,
-            pass_modules,
+            task_modules,
             main_fn,
         })
     }

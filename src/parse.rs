@@ -6,7 +6,7 @@ mod monotonic;
 mod resource;
 mod software_task;
 mod util;
-mod pass_module;
+mod task_module;
 mod main_function;
 
 use proc_macro2::TokenStream as TokenStream2;
@@ -480,7 +480,7 @@ fn monotonic_args(path: Path, tokens: TokenStream2) -> parse::Result<MonotonicAr
     .parse2(tokens)
 }
 
-fn pass_module_args(tokens: TokenStream2) -> parse::Result<(bool,bool)>{
+fn task_module_args(tokens: TokenStream2) -> parse::Result<(bool,bool)>{
     (|input: ParseStream<'_>| -> parse::Result<(bool,bool)> {
     let mut has_context_option = None;
     let mut has_monotonic_option = None;
@@ -522,7 +522,7 @@ fn pass_module_args(tokens: TokenStream2) -> parse::Result<(bool,bool)>{
                 }
                 has_monotonic_option = Some(lit_bool.value());
             }
-            _ => return Err(parse::Error::new(ident.span(), "unexpected argument in pass_module")),
+            _ => return Err(parse::Error::new(ident.span(), "unexpected argument in task_module")),
         }
  
         if content.is_empty() {

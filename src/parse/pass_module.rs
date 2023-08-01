@@ -2,10 +2,10 @@
 use syn::{parse, ItemMod};
 
 use crate::{
-    ast::{PassModule}
+    ast::{taskModule}
 };
 
-impl PassModule {
+impl taskModule {
     pub(crate) fn parse(module: &ItemMod, has_context: bool, has_monotonic: bool) -> parse::Result<Self> {
         
 
@@ -29,7 +29,7 @@ impl PassModule {
             },
         }
         
-        return Ok(PassModule {
+        return Ok(taskModule {
             has_context,
             has_monotonic,
             items,
